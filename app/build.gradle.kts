@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.ciweihaha.alisttv"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.ciweihaha.alisttv"
