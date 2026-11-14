@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AlistTV</string>
+
+    <string name="login_title">登录 Alist</string>
+    <string name="login_desc">输入服务器地址和账号，浏览你挂载的全部网盘。</string>
+    <string name="server_address">服务器地址</string>
+    <string name="username">用户名</string>
+    <string name="password">密码</string>
+    <string name="login">登录</string>
+    <string name="login_empty">服务器地址、用户名和密码都要填</string>
+    <string name="login_failed">登录失败：%1$s</string>
+    <string name="login_expired">登录已过期，请重新登录</string>
+
+    <string name="settings_title">设置</string>
+    <string name="settings_desc">修改服务器地址和账号，或退出登录。</string>
+    <string name="save_and_login">保存并重新登录</string>
+    <string name="logout">退出登录</string>
+
+    <string name="folder">文件夹</string>
+    <string name="settings_card">设置</string>
+    <string name="settings_card_desc">服务器 / 账号</string>
+    <string name="unsupported_file">不支持的文件类型</string>
+    <string name="load_failed">加载失败：%1$s</string>
+    <string name="empty_dir">（空目录）</string>
+    <string name="all_drives">全部网盘</string>
+
+    <string name="play_failed">播放失败：%1$s</string>
+    <string name="cannot_play">无法播放：%1$s</string>
+    <string name="image_load_failed">加载失败：%1$s</string>
+    <string name="image_decode_failed">图片解码失败</string>
+</resources>
