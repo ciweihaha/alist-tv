@@ -27,11 +27,6 @@ class AuthException(message: String = "登录已过期") : IOException(message)
 class AlistClient(private val server: String) {
 
     private val baseUrl = server.trimEnd('/')
-    private val http = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
-        .build()
     private val gson = Gson()
 
     /** 登录，成功返回 token；失败抛 ApiException。 */
@@ -88,7 +83,7 @@ class AlistClient(private val server: String) {
     fun fetchBytes(url: String, token: String?): ByteArray {
         val builder = Request.Builder().url(url)
         if (token != null && isSameHost(url)) builder.header("Authorization", token)
-        http.newCall(builder.build()).execute().use { resp ->
+        SHARED_HTTP.newCall(builder.build()).execute().use { resp ->
             if (!resp.isSuccessful) throw ApiException("下载失败: ${resp.code}")
             return resp.body?.bytes() ?: throw ApiException("空响应")
         }
@@ -99,7 +94,7 @@ class AlistClient(private val server: String) {
         val requestBody = json.toRequestBody(JSON_MEDIA_TYPE)
         val builder = Request.Builder().url(baseUrl + path).post(requestBody)
         if (token != null) builder.header("Authorization", token)
-        http.newCall(builder.build()).execute().use { resp ->
+        SHARED_HTTP.newCall(builder.build()).execute().use { resp ->
             val text = resp.body?.string() ?: ""
             // 401 由调用方按 JSON 里的 code 判断，不在这里当网络错误抛掉。
             // 空响应体时补一个等价 JSON，避免 Gson 解析空串崩掉。
@@ -131,5 +126,15 @@ class AlistClient(private val server: String) {
         const val PER_PAGE = 100
         private const val MAX_PAGES = 50
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
+
+        // 共享单例：OkHttpClient 自带连接池与线程池，每个实例各建一套
+        // 会在连续请求时重复 TLS 握手、多开 socket。此前仓库层每次访问
+        // 都 new 一个 AlistClient（各建一个 OkHttp），浏览翻页尤其浪费；
+        // 共享后全部实例复用同一套连接与线程。
+        private val SHARED_HTTP = OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .build()
     }
 }

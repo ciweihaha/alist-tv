@@ -11,7 +11,21 @@ import kotlinx.coroutines.withContext
  */
 class AlistRepository(context: Context) {
     private val prefs = Prefs(context)
-    private val client get() = AlistClient(prefs.server)
+
+    // 复用同一个 AlistClient（连接池见 AlistClient.SHARED_HTTP），只在设置页
+    // 改了服务器地址时重建。此前每次访问 client 都新建实例，一次浏览/取直链
+    // 要建两三个 client。
+    private var cachedServer: String = prefs.server
+    private var clientInstance: AlistClient = AlistClient(cachedServer)
+    private val client: AlistClient
+        get() {
+            val server = prefs.server
+            if (server != cachedServer) {
+                cachedServer = server
+                clientInstance = AlistClient(server)
+            }
+            return clientInstance
+        }
 
     val server: String get() = prefs.server
 

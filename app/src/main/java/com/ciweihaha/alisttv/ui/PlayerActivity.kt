@@ -107,8 +107,14 @@ class PlayerActivity : FragmentActivity() {
                 }
                 KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
                 KeyEvent.KEYCODE_MEDIA_STEP_FORWARD -> {
-                    val target = (exo.currentPosition + SEEK_MS)
-                        .coerceAtMost(exo.duration.coerceAtLeast(0))
+                    // duration 未知（直播流等）时为负：旧代码 coerce 到 0，
+                    // 按"右"反而跳回片头；此时不设上界，正常向前。
+                    val duration = exo.duration
+                    val target = if (duration > 0) {
+                        (exo.currentPosition + SEEK_MS).coerceAtMost(duration)
+                    } else {
+                        exo.currentPosition + SEEK_MS
+                    }
                     exo.seekTo(target)
                     playerView.showController()
                     return true

@@ -10,6 +10,8 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import com.ciweihaha.alisttv.R
 import com.ciweihaha.alisttv.api.AlistRepository
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
@@ -23,6 +25,7 @@ class ImageViewerActivity : FragmentActivity() {
     private lateinit var repository: AlistRepository
     private var paths: List<String> = emptyList()
     private var index: Int = 0
+    private var loadJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,13 +44,19 @@ class ImageViewerActivity : FragmentActivity() {
             finish()
             return
         }
+        // 取消上一次加载：快速连按左/右时，慢的旧请求回来得晚，
+        // 会把用户已经跳过的图盖在当前图上（显示错图）。
+        loadJob?.cancel()
         val path = paths[index]
+        val myIndex = index
         hintView.text = "${index + 1} / ${paths.size}  $path"
-        lifecycleScope.launch {
+        loadJob = lifecycleScope.launch {
             try {
                 val url = repository.getRawUrl(path)
                 val bytes = repository.fetchImageBytes(url)
+                if (myIndex != index) return@launch
                 val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                if (myIndex != index) return@launch
                 if (bitmap != null) {
                     imageView.setImageBitmap(bitmap)
                 } else {
@@ -57,12 +66,16 @@ class ImageViewerActivity : FragmentActivity() {
                         Toast.LENGTH_SHORT
                     ).show()
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                Toast.makeText(
-                    this@ImageViewerActivity,
-                    getString(R.string.image_load_failed, e.message ?: ""),
-                    Toast.LENGTH_LONG
-                ).show()
+                if (myIndex == index) {
+                    Toast.makeText(
+                        this@ImageViewerActivity,
+                        getString(R.string.image_load_failed, e.message ?: ""),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
             }
         }
     }

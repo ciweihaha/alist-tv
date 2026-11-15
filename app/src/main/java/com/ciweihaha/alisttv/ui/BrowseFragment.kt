@@ -13,6 +13,8 @@ import com.ciweihaha.alisttv.api.AlistRepository
 import com.ciweihaha.alisttv.api.AuthException
 import com.ciweihaha.alisttv.api.FsItem
 import com.ciweihaha.alisttv.util.FileUtils
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
@@ -27,6 +29,7 @@ class BrowseFragment : VerticalGridSupportFragment() {
     private val pathStack = ArrayDeque<String>()
     private var currentPath = "/"
     private var loading = false
+    private var loadJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -96,13 +99,18 @@ class BrowseFragment : VerticalGridSupportFragment() {
     }
 
     private fun loadPath(path: String) {
+        // 取消上一次未完成的加载：加载中返回上级/进新目录时，旧协程回来
+        // 会把旧目录的文件 add 进新目录的网格（列表串台）。
+        loadJob?.cancel()
         currentPath = path
         title = if (path == "/") getString(R.string.all_drives) else path
         loading = true
         browseAdapter.clear()
-        lifecycleScope.launch {
+        loadJob = lifecycleScope.launch {
             try {
                 val files = repository.listFiles(path)
+                // 加载期间用户已去了别的目录：丢弃这次结果。
+                if (path != currentPath) return@launch
                 val sorted = files.sortedWith(
                     compareByDescending<FsItem> { it.isDir }
                         .thenBy { it.name.lowercase() }
@@ -112,6 +120,8 @@ class BrowseFragment : VerticalGridSupportFragment() {
                 if (sorted.isEmpty()) {
                     title = "$path ${getString(R.string.empty_dir)}"
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: AuthException) {
                 toast(getString(R.string.login_expired), Toast.LENGTH_LONG)
                 startActivity(Intent(requireContext(), LoginActivity::class.java))
@@ -119,7 +129,8 @@ class BrowseFragment : VerticalGridSupportFragment() {
             } catch (e: Exception) {
                 toast(getString(R.string.load_failed, e.message ?: ""), Toast.LENGTH_LONG)
             } finally {
-                loading = false
+                // 已被新导航取代时不碰状态，由新的加载自己收尾。
+                if (path == currentPath) loading = false
             }
         }
     }

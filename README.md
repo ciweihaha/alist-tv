@@ -23,10 +23,10 @@ Kotlin + androidx.leanback（VerticalGridSupportFragment + GuidedStepSupportFrag
 
 本地没有 Android SDK 时，用 GitHub Actions 编译（仓库里已配好 `.github/workflows/android.yml`）：
 
-- push 到 `main`、提 PR 或手动触发，Job 用 JDK 17 + Gradle 8.7 跑 `gradle assembleDebug`，
+- push 到 `main`、提 PR 或手动触发，Job 用 JDK 17 + Gradle 8.9 跑 `gradle assembleDebug`，
 - 编好的 APK 作为 artifact `AlistTV-debug` 上传（`app/build/outputs/apk/debug/app-debug.apk`）。
 
-本地构建（需 JDK 17 + Android SDK，compileSdk 34）：
+本地构建（需 JDK 17 + Android SDK，compileSdk 35）：
 
 ```bash
 gradle assembleDebug
@@ -38,7 +38,7 @@ gradle assembleDebug
 
 ```
 settings.gradle.kts / build.gradle.kts / gradle.properties
-.github/workflows/android.yml        CI：JDK 17 + Gradle 8.5 编译 debug APK
+.github/workflows/android.yml        CI：JDK 17 + Gradle 8.9 编译 debug APK
 app/build.gradle.kts                  依赖：leanback 1.2.0 / media3 1.3.1 / okhttp 4.12.0 / gson 2.11.0
 app/src/main/AndroidManifest.xml      LEANBACK_LAUNCHER + banner，minSdk 21 / targetSdk 34
 app/src/main/java/com/ciweihaha/alisttv/
